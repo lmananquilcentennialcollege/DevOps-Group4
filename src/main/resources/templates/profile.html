@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <link rel="stylesheet" href="/styles.css">
+    <title>Edit Profile</title>
+    <style>
+        body {
+            background-color: lightblue; /* Light blue background */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column; /* Align items in a column */
+            height: 100vh; /* Full height of the viewport */
+            margin: 0; /* Remove default margin */
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        form {
+            background-color: white; /* White background for the form */
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px; /* Maximum width for the form */
+            margin-bottom: 20px; /* Space between form and button */
+        }
+
+        label {
+            margin-top: 10px; /* Space above each label */
+            display: block; /* Display labels as block elements */
+        }
+
+        input {
+            width: 100%; /* Full width of the input fields */
+            padding: 10px; /* Padding inside the input fields */
+            margin-bottom: 10px; /* Space below each input field */
+            border-radius: 5px; /* Rounded corners for input fields */
+            border: 1px solid #ccc; /* Border color */
+        }
+
+        .button {
+            padding: 10px 20px;
+            margin: 5px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            cursor: pointer; /* Pointer cursor for buttons */
+        }
+
+        .button:hover {
+            background-color: #45a049; /* Darker green on hover */
+        }
+    </style>
+</head>
+<body>
+    <h1>Edit Profile</h1>
+    <form action="/students/update" method="post">
+        <input type="hidden" th:value="${student.studentId}" name="studentId"/>
+        
+        <label for="username">Username:</label>
+        <input type="text" id="username" name="username" th:value="${student.username}" required>
+        
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password" placeholder="Leave blank to keep current password">
+        
+        <label for="firstname">First Name:</label>
+        <input type="text" id="firstname" name="firstname" th:value="${student.firstname}" required>
+        
+        <label for="lastname">Last Name:</label>
+        <input type="text" id="lastname" name="lastname" th:value="${student.lastname}" required>
+        
+        <label for="address">Address:</label>
+        <input type="text" id="address" name="address" th:value="${student.address}" required>
+        
+        <label for="city">City:</label>
+        <input type="text" id="city" name="city" th:value="${student.city}" required>
+        
+        <label for="postalCode">Postal Code:</label>
+        <input type="text" id="postalCode" name="postalCode" th:value="${student.postalCode}" required>
+        
+        <button type="submit" class="button">Update Profile</button>
+    </form>
+    <a class="button" href="/">Go to Homepage</a>
+</body>
+</html>
