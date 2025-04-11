@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <link rel="stylesheet" href="/styles.css">
+    <title>Program List</title>
+    
+    <style>
+        body {
+            background-color: lightblue; /* Light blue background */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px; /* Adjust the width as needed */
+            background-color: white;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        table, th, td {
+            border: 1px solid black; /* Black border for table */
+        }
+
+        th {
+            background-color: #4CAF50; /* Green background for header */
+            color: white; /* White text color */
+        }
+
+        td {
+            padding: 10px;
+            text-align: center;
+            background-color: #e0f7e0; /* Light green background for table rows */
+        }
+
+        hr {
+            margin: 20px 0;
+        }
+
+        .credit-card-details {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .credit-card-details label {
+            margin-top: 10px;
+            margin-bottom: 5px;
+            text-align: left;
+            width: 100%;
+            max-width: 300px;
+        }
+
+        .credit-card-details input, .credit-card-details button {
+            width: 100%;
+            max-width: 300px;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+
+        .credit-card-details button {
+            cursor: pointer;
+            background-color: #007bff; /* Blue button */
+            color: white;
+            border: none;
+        }
+
+        .credit-card-details button:hover {
+            background-color: #0056b3; /* Darker blue on hover */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Program List</h1>
+        <form action="/students/confirmation" method="post">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Code</th>
+                        <th>Name</th>
+                        <th>Duration</th>
+                        <th>Fee</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="program : ${programs}">
+                        <td th:text="${program.programCode}"></td>
+                        <td th:text="${program.programName}"></td>
+                        <td th:text="${program.duration}"></td>
+                        <td th:text="${program.fee}"></td>
+                        <td>
+                            <input type="checkbox" name="selectedPrograms" th:value="${program.programCode}"/>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <hr> <!-- Horizontal Line for Separation -->
+
+            <div class="credit-card-details">
+                <h2>Credit Card Details</h2>
+                <label for="cardholderName">Cardholder Name:</label>
+                <input type="text" id="cardholderName" name="cardholderName" required>
+
+                <label for="cardNumber">Card Number:</label>
+                <input type="text" id="cardNumber" name="cardNumber" required pattern="\d{16}" maxlength="16" placeholder="1234 5678 9012 3456">
+
+                <label for="expirationDate">Expiration Date:</label>
+                <input type="month" id="expirationDate" name="expirationDate" required>
+
+                <label for="cvv">CVV:</label>
+                <input type="text" id="cvv" name="cvv" required pattern="\d{3}" maxlength="3" placeholder="123">
+
+                <button type="submit">Proceed to Confirmation</button>
+            </div>
+        </form>
+    </div>
+</body>
+</html>
