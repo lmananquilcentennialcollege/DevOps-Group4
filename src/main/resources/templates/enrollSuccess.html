@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <link rel="stylesheet" href="/styles.css">
+    <title>Success</title>
+    
+    <style>
+        body {
+            background-color: #e0f7fa; /* Light blue background */
+            font-family: Arial, sans-serif; /* Friendly font */
+            color: #333; /* Darker text for readability */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh; /* Full viewport height */
+            margin: 0; /* No margin */
+            text-align: center; /* Center text */
+        }
+
+        h1 {
+            color: #00796b; /* Dark teal for the header */
+            margin-bottom: 10px; /* Space below the header */
+        }
+
+        p {
+            font-size: 18px; /* Larger font size for the message */
+            margin: 10px 0; /* Margin around the paragraph */
+        }
+
+        .button {
+            background-color: #00796b; /* Dark teal background */
+            color: white; /* White text for the link */
+            padding: 10px 20px; /* Padding for the link */
+            border-radius: 5px; /* Rounded corners */
+            text-decoration: none; /* No underline */
+            font-size: 16px; /* Font size for the link */
+            margin: 10px; /* Space around the buttons */
+            display: inline-block; /* To ensure padding works */
+            transition: background-color 0.3s; /* Smooth background change */
+        }
+
+        .button:hover {
+            background-color: #004d40; /* Darker shade on hover */
+        }
+    </style>
+</head>
+<body>
+    <h1>Enrollment Successful!</h1>
+    <p>Thank you for enrolling.</p>
+    <a class="button" href="/">Go to Homepage</a>
+    <a class="button" href="/students/profile">Edit Profile</a>
+</body>
+</html>
