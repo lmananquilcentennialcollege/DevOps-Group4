@@ -1,5 +1,9 @@
 package com.example.devops.repo;
 
-public class EnrollmentRepository {
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import com.example.devops.model.Enrollment;
+
+public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
 
 }
