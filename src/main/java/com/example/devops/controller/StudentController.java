@@ -27,49 +27,44 @@ public class StudentController {
 	@Autowired
 	private StudentService studentService;
 
-	// Inject HttpSession
 	@Autowired
 	private HttpSession session;
 
-	// Show registration form
 	@GetMapping("/")
 	public String showRegistrationForm(Model model) {
-		model.addAttribute("student", new Student()); // Add an empty student object for registration
-		model.addAttribute("loginForm", new LoginBean()); // Add an empty login form object
-		return "index"; // Return index.html
+		model.addAttribute("student", new Student());
+		model.addAttribute("loginForm", new LoginBean()); 
+		return "index"; 
 	}
 
 	@PostMapping("/students/login")
 	public String login(@ModelAttribute LoginBean loginForm, Model model, HttpSession session) {
-		// Verify user credentials
+		
 		if (studentService.validateUser(loginForm.getUsername(), loginForm.getPassword())) {
-			// Successful login
+			
 			Optional<Student> studentOpt = studentService.findByUsername(loginForm.getUsername());
 			if (studentOpt.isPresent()) {
-				session.setAttribute("studentId", studentOpt.get().getStudentId()); // Store student ID in session
+				session.setAttribute("studentId", studentOpt.get().getStudentId()); 
 			}
-			return "redirect:/students/programs"; // Redirect to the students' list page
+			return "redirect:/students/programs"; 
 		}
 
-		// If login fails, return to the index page with an error message
-		model.addAttribute("student", new Student()); // Add an empty student object for registration
-		model.addAttribute("loginForm", loginForm); // Retain the login form values
-		model.addAttribute("loginError", "Invalid username or password"); // Set the error message
-		return "index"; // Return to index.html to show the login form again
+		model.addAttribute("student", new Student()); 
+		model.addAttribute("loginForm", loginForm);
+		model.addAttribute("loginError", "Invalid username or password"); 
+		return "index"; 
 	}
 
-	// Handle registration form submission
 	@PostMapping("/students/register")
 	public String registerStudent(@ModelAttribute Student student) {
 		studentService.registerStudent(student);
-		return "success"; // Redirect after successful registration
+		return "success"; 
 	}
 
-	// List all programs
 	@GetMapping("/students/programs")
 	public String listPrograms(Model model) {
 		model.addAttribute("programs", studentService.findAllProgram());
-		return "programs"; // Thymeleaf template to display students
+		return "programs"; 
 	}
 
 	@PostMapping("/students/confirmation")
@@ -84,25 +79,22 @@ public class StudentController {
 
 		model.addAttribute("selectedPrograms", selectedPrograms);
 		model.addAttribute("totalFee", totalFee);
-
-		// Store the totalFee in the model to pass it to the confirmation page if needed
 		model.addAttribute("totalFee", totalFee);
 
-		return "confirmation"; // Return the confirmation view (which already exists)
+		return "confirmation"; 
 	}
 
 	@PostMapping("/students/save")
 	public String saveEnrollment(@RequestParam("selectedPrograms") List<String> selectedProgramCodes,
-			@RequestParam("programFees") List<Double> programFees, // Receive program fees
+			@RequestParam("programFees") List<Double> programFees, 
 			@RequestParam("totalfee") double totalFee, Model model) {
 
-		// Retrieve the student ID from the session
 		Long studentId = (Long) session.getAttribute("studentId");
 
 		if (studentId != null) {
 			for (int i = 0; i < selectedProgramCodes.size(); i++) {
 				String code = selectedProgramCodes.get(i);
-				Double fee = programFees.get(i); // Get the fee associated with the program code
+				Double fee = programFees.get(i); 
 
 				try {
 					Long programCode = Long.valueOf(code);
@@ -110,7 +102,7 @@ public class StudentController {
 					Enrollment enrollment = new Enrollment();
 					enrollment.setStudentId(studentId);
 					enrollment.setProgramCode(programCode);
-					enrollment.setAmountPaid(fee); // Set fee from the programFees list
+					enrollment.setAmountPaid(fee); 
 					enrollment.setStartDate(new Date());
 					enrollment.setStatus("Enrolled");
 
@@ -120,7 +112,6 @@ public class StudentController {
 					return "error";
 				}
 			}
-
 			return "enrollSuccess";
 		} else {
 			model.addAttribute("error", "User not found");
@@ -132,14 +123,14 @@ public class StudentController {
 	public String editProfile(Model model, HttpSession session) {
 		Long studentId = (Long) session.getAttribute("studentId");
 		if (studentId != null) {
-			Optional<Student> studentOpt = studentService.findStudentById(studentId); // Fetch student by ID
+			Optional<Student> studentOpt = studentService.findStudentById(studentId); 
 			if (studentOpt.isPresent()) {
 				model.addAttribute("student", studentOpt.get());
-				return "profile"; // Return profile.html
+				return "profile"; 
 			}
 		}
 		model.addAttribute("error", "User not found");
-		return "error"; // Redirect to error page if student not found
+		return "error"; 
 	}
 
 	@PostMapping("/students/update")
@@ -150,18 +141,16 @@ public class StudentController {
 			if (existingStudentOpt.isPresent()) {
 				Student existingStudent = existingStudentOpt.get();
 
-				// Retain existing password if the new one is not provided
 				if (student.getPassword() == null || student.getPassword().isEmpty()) {
 					student.setPassword(existingStudent.getPassword());
 				}
 
-				// Update the student details
 				student.setStudentId(studentId);
 				studentService.updateStudent(student);
-				return "enrollSuccess"; // Redirect to success page after update
+				return "enrollSuccess"; 
 			}
 		}
-		return "error"; // Handle error case
+		return "error"; 
 	}
 
 }
