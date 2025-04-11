@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import com.example.devops.StudentService;
+import com.example.devops.model.Enrollment;
 import com.example.devops.model.LoginBean;
 import com.example.devops.model.Program;
 import com.example.devops.model.Student;
