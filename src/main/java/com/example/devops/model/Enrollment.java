@@ -81,5 +81,4 @@ public class Enrollment {
 		this.amountPaid = amountPaid;
 	}
 	
-	
 }
