@@ -97,6 +97,5 @@ public class Student {
 
 	public void setPostalCode(String postalCode) {
 		this.postalCode = postalCode;
-	}
-   
+	}  
 }

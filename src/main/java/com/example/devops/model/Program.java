@@ -19,15 +19,11 @@ public class Program {
 		this.duration = duration;
 		this.fee = fee;
 	}
-
 	public Program() {
-
 	}
-
 	public Long getProgramCode() {
 		return programCode;
 	}
-
 	public void setProgramCode(Long programCode) {
 		this.programCode = programCode;
 	}
@@ -35,7 +31,6 @@ public class Program {
 	public String getProgramName() {
 		return programName;
 	}
-
 	public void setProgramName(String programName) {
 		this.programName = programName;
 	}
@@ -43,17 +38,13 @@ public class Program {
 	public int getDuration() {
 		return duration;
 	}
-
 	public void setDuration(int duration) {
 		this.duration = duration;
 	}
-
 	public double getFee() {
 		return fee;
 	}
-
 	public void setFee(double fee) {
 		this.fee = fee;
-	}
-  //Testing 
+	} 
 }
