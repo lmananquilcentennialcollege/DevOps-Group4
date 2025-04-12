@@ -12,8 +12,8 @@ steps:
     organization: 'donaldazhuga'         # Your organization name in SonarCloud
     scannerMode: 'CLI'
     configMode: 'manual'
-    cliProjectKey: 'donaldazhuga'       # Corrected project key to match SonarCloud
-    cliProjectName: 'DevOps-Group4'      # Your project name in SonarCloud
+    cliProjectKey: 'donaldazhuga'       # Your SonarCloud project key
+    cliProjectName: 'DevOps-Group4'      # Your SonarCloud project name
 
 # Step 2: Maven Build + Test
 - task: Maven@3
@@ -21,7 +21,7 @@ steps:
     mavenPomFile: 'pom.xml'   # Ensure correct path to your pom.xml file
     mavenOptions: '-Xmx3072m'
     javaHomeOption: 'JDKVersion'
-    jdkVersionOption: '21'    # Update this to your desired JDK version
+    jdkVersionOption: '21'    # Using Java 21
     jdkArchitectureOption: 'x64'
     publishJUnitResults: true
     testResultsFiles: '**/surefire-reports/TEST-*.xml'
@@ -32,15 +32,17 @@ steps:
   inputs:
     extraProperties: |
       sonar.verbose=true
+      sonar.java.source=21
+      sonar.java.target=21
 
 # Step 4: SonarCloud Publish Quality Gate
 - task: SonarCloudPublish@1
   inputs:
-    pollingTimeoutSec: '300'  # Timeout in seconds (adjust as needed)
+    pollingTimeoutSec: '300'
 
-# Step 5: Publish build artifacts (optional but recommended)
+# Step 5: Publish Build Artifacts
 - task: PublishBuildArtifacts@1
   inputs:
-    PathtoPublish: '$(System.DefaultWorkingDirectory)/target'  # Update this path if artifacts are in a different location
+    PathtoPublish: '$(System.DefaultWorkingDirectory)/target'  # Directory containing artifacts
     ArtifactName: 'drop'
     publishLocation: 'Container'
