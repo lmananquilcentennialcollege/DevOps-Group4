@@ -32,7 +32,7 @@ stages:
             goals: 'clean install'
             options: '-DskipTests=false'
             javaHomeOption: 'UserPath'
-            jdkVersionOption: '21'
+            jdkVersionOption: '21.0.4'
             mavenVersionOption: 'Default'
             publishJUnitResults: true
             testResultsFiles: '/surefire-reports/TEST-*.xml'
