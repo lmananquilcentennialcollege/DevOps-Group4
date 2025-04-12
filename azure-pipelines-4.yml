@@ -1,0 +1,69 @@
+trigger:
+  - master
+
+pool:
+  name: AgentDonalda
+
+variables:
+  MAVEN_CACHE_FOLDER: $(Pipeline.Workspace)/.m2/repository
+
+steps:
+  # Checkout code
+  - task: Checkout@1
+
+  # Cache Maven dependencies
+  - task: Cache@2
+    inputs:
+      key: 'maven | "$(Agent.OS)" | **/pom.xml'
+      restoreKeys: |
+        maven | "$(Agent.OS)"
+      path: $(MAVEN_CACHE_FOLDER)
+
+  # SonarCloud: Prepare analysis
+  - task: SonarCloudPrepare@1
+    inputs:
+      SonarCloud: 'https://sonarcloud.io'
+      organization: 'Donalda Zhuga'
+      scannerMode: 'CLI'
+      configMode: 'manual'
+      cliProjectKey: 'donaldazhuga'
+      cliProjectName: 'DevOps-Group4'
+      extraProperties: |
+        sonar.java.binaries=target
+        sonar.coverage.jacoco.xmlReportPaths=**/jacoco.xml
+
+  # Build and run tests with Maven
+  - task: Maven@3
+    inputs:
+      mavenPomFile: 'pom.xml'
+      goals: 'clean verify'
+      mavenOptions: '-Xmx1024m'
+      javaHomeOption: 'JDKVersion'
+      jdkVersionOption: '21'
+      jdkArchitectureOption: 'x64'
+      publishJUnitResults: true
+      testResultsFiles: '**/surefire-reports/TEST-*.xml'
+      options: |
+        -Dmaven.repo.local=$(MAVEN_CACHE_FOLDER)
+
+  # Run code coverage (Jacoco)
+  - task: Bash@3
+    inputs:
+      targetType: 'inline'
+      script: |
+        echo "Code coverage is handled by Maven + Jacoco Plugin"
+
+  # SonarCloud: Run analysis
+  - task: SonarCloudAnalyze@1
+
+  # SonarCloud: Publish results
+  - task: SonarCloudPublish@1
+    inputs:
+      pollingTimeoutSec: '300'
+
+  # Publish Artifact
+  - task: PublishBuildArtifacts@1
+    inputs:
+      PathtoPublish: 'target'
+      ArtifactName: 'javaapp'
+      publishLocation: 'Container'
