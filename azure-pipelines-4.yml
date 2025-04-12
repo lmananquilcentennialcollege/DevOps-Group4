@@ -23,18 +23,18 @@ stages:
         - task: Maven@3
           inputs:
             mavenPomFile: 'pom.xml'
-            goals: 'clean verify'
-            options: '-DskipTests=false -Dsonar.login=$(SONAR_TOKEN)'
+            goals: 'clean install'
+            options: '-DskipTests=false'
             javaHomeOption: 'JDKVersion'
             jdkVersionOption: '21'
             mavenVersionOption: 'Default'
             publishJUnitResults: true
             testResultsFiles: '**/surefire-reports/TEST-*.xml'
 
-        # Step 3: SonarCloud Code Analysis
+        # Step 3: SonarCloud Prepare Task
         - task: SonarCloudPrepare@1
           inputs:
-            SonarCloud: 'DevOps'
+            SonarCloud: 'DevOps'  # Replace this with the actual service connection name
             organization: 'donaldazhuga'
             scannerMode: 'CLI'
             configMode: 'manual'
@@ -42,23 +42,21 @@ stages:
             cliProjectName: 'DevOps-Group4'
             cliSources: '.'
 
+        # Step 4: SonarCloud Analyze Task
         - task: SonarCloudAnalyze@1
           inputs:
             extraProperties: |
               sonar.verbose=true
+              sonar.java.binaries=target/classes
               sonar.java.source=21
               sonar.java.target=21
 
+        # Step 5: SonarCloud Publish Quality Gate
         - task: SonarCloudPublish@1
           inputs:
             pollingTimeoutSec: '300'
 
-        # Step 4: Generate Code Coverage Report
-        - script: |
-            echo "Generating code coverage report..."
-          displayName: 'Generate Code Coverage'
-
-        # Step 5: Publish Build Artifacts
+        # Step 6: Publish Build Artifacts
         - task: PublishBuildArtifacts@1
           inputs:
             PathtoPublish: 'target'
