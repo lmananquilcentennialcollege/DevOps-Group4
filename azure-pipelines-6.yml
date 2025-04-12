@@ -1,15 +1,11 @@
-# Azure DevOps Pipeline for CI/CD
-# Meets all rubric requirements for presentation
-
 trigger:
-- master  # Changed from master to main for modern GitHub standards
+- main
 
 variables:
   buildConfiguration: 'Release'
   sonar.projectKey: 'DevOps-Group4'
   sonar.projectName: 'DevOps-Group4'
   sonar.organization: 'donaldazhuga'
-  javaVersion: '21'
   mavenVersion: '3.9.9'
   dev.port: '8081'
   qa.port: '8082'
@@ -18,42 +14,38 @@ variables:
 
 stages:
 # ------------------------------
-# CI - BUILD & TEST (14 marks)
+# CI - BUILD & TEST
 # ------------------------------
 - stage: Build
   displayName: 'Build and Test'
   jobs:
     - job: Build
       pool:
-        name: AgentDonalda  # Or your self-hosted agent
+        vmImage: 'ubuntu-latest'  # Using Microsoft-hosted agent with Java 21 support
       steps:
-        # GitHub Connection (1 mark)
+        # Step 1: Checkout code
         - checkout: self
           clean: true
           fetchDepth: 1
-          displayName: 'Checkout from GitHub (PAT authenticated)'
+          displayName: 'Checkout from GitHub'
 
-        # Java Setup (2 marks - proper build tool)
-        - task: JavaToolInstaller@0
-          displayName: 'Install Java 21'
-          inputs:
-            versionSpec: '21'
-            jdkArchitectureOption: 'x64'
-            jdkSourceOption: 'PreInstalled'
-
-        # Maven Build (2 marks - Build stage)
+        # Step 2: Maven Build with Java 21
         - task: Maven@3
-          displayName: 'Maven Build and Test'
+          displayName: 'Maven Build with Java 21'
           inputs:
             mavenPomFile: 'pom.xml'
             goals: 'clean verify'
-            options: '-DskipTests=false'
+            options: '-DskipTests=false -Xmx3072m'
+            javaHomeOption: 'JDKVersion'
+            jdkVersionOption: '21'
+            jdkArchitectureOption: 'x64'
             mavenVersionOption: 'Default'
             publishJUnitResults: true
             testResultsFiles: '**/surefire-reports/TEST-*.xml'
-            codeCoverageToolOption: 'JaCoCo'  # (3 marks - code coverage)
+            codeCoverageToolOption: 'JaCoCo'
+            mavenAuthenticateFeed: true
 
-        # SonarQube Analysis (3 marks)
+        # Step 3: SonarQube Analysis
         - task: SonarCloudPrepare@1
           displayName: 'Prepare SonarQube Analysis'
           inputs:
@@ -76,7 +68,7 @@ stages:
         - task: SonarCloudPublish@1
           displayName: 'Publish Quality Gate'
 
-        # Artifact Generation (2 marks)
+        # Step 4: Publish Artifacts
         - task: PublishBuildArtifacts@1
           displayName: 'Publish Artifact'
           inputs:
@@ -85,7 +77,7 @@ stages:
             publishLocation: 'Container'
 
 # ------------------------------
-# CD - DEPLOYMENT (8 marks)
+# CD - DEPLOYMENT
 # ------------------------------
 - stage: Deliver
   displayName: 'Deliver Artifacts'
@@ -98,7 +90,7 @@ stages:
       steps:
         - download: current
           artifact: drop
-          displayName: 'Download Artifacts (1 mark)'
+          displayName: 'Download Artifacts'
 
         - script: echo "Artifacts ready for deployment"
           displayName: 'Verify Artifacts'
@@ -121,7 +113,7 @@ stages:
             java -jar target/*.jar --server.port=$(dev.port) &
             sleep 10
             curl http://localhost:$(dev.port)/actuator/health
-          displayName: 'Deploy to Dev (2 marks)'
+          displayName: 'Deploy to Dev'
           env:
             JAVA_HOME: $(JAVA_HOME_21_X64)
 
@@ -134,7 +126,7 @@ stages:
     - job: DeployQAT
       steps:
         - script: echo "Mock deployment to QAT on port $(qa.port)"
-          displayName: 'Mock QAT Deployment (1 mark)'
+          displayName: 'Mock QAT Deployment'
 
 - stage: DeployToStaging
   displayName: 'Deploy to Staging'
@@ -144,7 +136,7 @@ stages:
     - job: DeployStaging
       steps:
         - script: echo "Mock deployment to Staging on port $(staging.port)"
-          displayName: 'Mock Staging Deployment (1 mark)'
+          displayName: 'Mock Staging Deployment'
 
 - stage: DeployToProduction
   displayName: 'Deploy to Production'
@@ -154,4 +146,4 @@ stages:
     - job: DeployProd
       steps:
         - script: echo "Mock deployment to Production on port $(production.port)"
-          displayName: 'Mock Production Deployment (1 mark)'
+          displayName: 'Mock Production Deployment'
