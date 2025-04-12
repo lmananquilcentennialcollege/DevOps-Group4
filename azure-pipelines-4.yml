@@ -47,7 +47,7 @@ stages:
           inputs:
             extraProperties: |
               sonar.verbose=true
-              sonar.java.binaries=target/classes
+              sonar.java.binaries=C:/Users/Administrator/eclipse-workspace/devops/DevOpsGroup4/target/classes
               sonar.java.source=21
               sonar.java.target=21
 
