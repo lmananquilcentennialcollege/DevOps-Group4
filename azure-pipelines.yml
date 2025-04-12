@@ -7,7 +7,7 @@ trigger:
 - master
 
 pool:
-  name: AgentDonalda
+  name: AgenPoolsDevOpsLab4
 
 steps:
 - task: Maven@3
