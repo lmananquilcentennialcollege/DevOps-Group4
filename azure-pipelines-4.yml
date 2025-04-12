@@ -45,11 +45,10 @@ stages:
         # Step 4: SonarCloud Analyze Task
         - task: SonarCloudAnalyze@1
           inputs:
-            extraProperties: |
-              sonar.verbose=true
-              sonar.java.binaries=C:/Users/Administrator/eclipse-workspace/devops/DevOpsGroup4/target/classes
-              sonar.java.source=21
-              sonar.java.target=21
+             extraProperties: |
+               sonar.verbose=true
+               sonar.log.level=DEBUG
+               sonar.java.binaries=C:/Users/Administrator/eclipse-workspace/devops/DevOpsGroup4/target/classes
 
         # Step 5: SonarCloud Publish Quality Gate
         - task: SonarCloudPublish@1
