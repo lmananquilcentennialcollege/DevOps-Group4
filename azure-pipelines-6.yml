@@ -9,6 +9,7 @@ variables:
   sonar.projectKey: 'DevOps-Group4'
   sonar.projectName: 'DevOps-Group4'
   sonar.organization: 'donaldazhuga'
+  mavenVersion: '3.6.3'
 
 stages:
 # ------------------------------
@@ -23,46 +24,42 @@ stages:
         # Step 1: Checkout code from the repository
         - checkout: self
           clean: true
+          fetchDepth: 1
 
-        # Step 2: Maven Build and Test with Java 21
+        # Step 2: Set up Java 21
+        - task: JavaToolInstaller@0
+          displayName: 'Install Java 21'
+          inputs:
+            versionSpec: '21'
+            jdkArchitectureOption: 'x64'
+            jdkSourceOption: 'PreInstalled'
+
+        # Step 3: Maven Build with SonarCloud Analysis
         - task: Maven@3
-          displayName: 'Maven Build and Test'
+          displayName: 'Maven Build with Sonar Analysis'
           inputs:
             mavenPomFile: 'pom.xml'
-            goals: 'clean verify'
-            options: '-DskipTests=false -Dsonar.skip=true'
-            javaHomeOption: 'JDKVersion'
-            jdkVersionOption: '21'
-            mavenVersionOption: 'Default'
+            goals: 'clean verify org.sonarsource.scanner.maven:sonar-maven-plugin:3.11.0.2182:sonar'
+            options: >-
+              -DskipTests=false
+              -Dsonar.projectKey=$(sonar.projectKey)
+              -Dsonar.projectName=$(sonar.projectName)
+              -Dsonar.organization=$(sonar.organization)
+              -Dsonar.host.url=https://sonarcloud.io
+              -Dsonar.login=$(SONAR_TOKEN)
+              -Dsonar.java.source=21
+              -Dsonar.java.target=21
+              -Dsonar.sourceEncoding=UTF-8
+              -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
+              -Dsonar.junit.reportPaths=target/surefire-reports
+              -Dsonar.qualitygate.wait=true
+            mavenVersionOption: 'Path'
+            mavenDirectory: '$(MAVEN_HOME)'
             publishJUnitResults: true
             testResultsFiles: '**/surefire-reports/TEST-*.xml'
             mavenAuthenticateFeed: true
-
-        # Step 3: SonarCloud Analysis
-        - task: SonarCloudPrepare@1
-          displayName: 'Prepare SonarCloud Analysis'
-          inputs:
-            SonarCloud: 'DevOps'
-            organization: '$(sonar.organization)'
-            scannerMode: 'MSBuild'
-            projectKey: '$(sonar.projectKey)'
-            projectName: '$(sonar.projectName)'
-            extraProperties: |
-              sonar.verbose=true
-              sonar.java.source=21
-              sonar.java.target=21
-              sonar.sourceEncoding=UTF-8
-              sonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
-              sonar.junit.reportPaths=target/surefire-reports
-
-        - task: SonarCloudAnalyze@1
-          displayName: 'Run SonarCloud Analysis'
-          timeoutInMinutes: 10
-
-        - task: SonarCloudPublish@1
-          displayName: 'Publish SonarCloud Results'
-          inputs:
-            pollingTimeoutSec: '300'
+          env:
+            SONAR_TOKEN: $(sonarCloudToken) # Secret variable in Azure DevOps
 
         # Step 4: Publish Build Artifacts
         - task: PublishBuildArtifacts@1
@@ -86,8 +83,10 @@ stages:
           artifact: drop
           displayName: 'Download Artifacts'
 
-        - script: echo "Delivering artifact to next stage"
-          displayName: 'Mock Deliver Step'
+        - script: |
+            echo "Delivering artifact to next stage"
+            ls -R target
+          displayName: 'Verify Artifacts'
 
 - stage: DeployToDev
   displayName: 'Deploy to Dev Environment'
@@ -96,39 +95,79 @@ stages:
   jobs:
     - job: DeployDev
       steps:
+        - download: current
+          artifact: drop
+          displayName: 'Download Artifacts'
+        
         - script: |
             echo "Starting Dev Deployment"
-            java -jar target/*.jar --server.port=8081
+            nohup java -jar target/*.jar --server.port=8081 > app.log 2>&1 &
+            echo $! > pid.file
+            sleep 30
+            cat app.log
           displayName: 'Deploy to Dev Port 8081'
           env:
             JAVA_HOME: $(JAVA_HOME_21_X64)
 
 - stage: DeployToQAT
-  displayName: 'Deploy to QAT Environment'
-  dependsOn: [DeployToDev]
+  displayName: 'Deploy to QA Environment'
+  dependsOn: DeployToDev
   condition: succeeded()
   jobs:
     - job: DeployQAT
       steps:
-        - script: echo "Mock Deployment to QAT"
-          displayName: 'Deploy to QAT'
+        - download: current
+          artifact: drop
+          displayName: 'Download Artifacts'
+        
+        - script: |
+            echo "Starting QA Deployment"
+            nohup java -jar target/*.jar --server.port=8082 > app.log 2>&1 &
+            echo $! > pid.file
+            sleep 30
+            cat app.log
+          displayName: 'Deploy to QA Port 8082'
+          env:
+            JAVA_HOME: $(JAVA_HOME_21_X64)
 
 - stage: DeployToStaging
   displayName: 'Deploy to Staging Environment'
-  dependsOn: [DeployToQAT]
+  dependsOn: DeployToQAT
   condition: succeeded()
   jobs:
     - job: DeployStaging
       steps:
-        - script: echo "Mock Deployment to Staging"
-          displayName: 'Deploy to Staging'
+        - download: current
+          artifact: drop
+          displayName: 'Download Artifacts'
+        
+        - script: |
+            echo "Starting Staging Deployment"
+            nohup java -jar target/*.jar --server.port=8083 > app.log 2>&1 &
+            echo $! > pid.file
+            sleep 30
+            cat app.log
+          displayName: 'Deploy to Staging Port 8083'
+          env:
+            JAVA_HOME: $(JAVA_HOME_21_X64)
 
 - stage: DeployToProduction
   displayName: 'Deploy to Production Environment'
-  dependsOn: [DeployToStaging]
+  dependsOn: DeployToStaging
   condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
   jobs:
     - job: DeployProd
       steps:
-        - script: echo "Mock Deployment to Production"
-          displayName: 'Deploy to Production'
+        - download: current
+          artifact: drop
+          displayName: 'Download Artifacts'
+        
+        - script: |
+            echo "Starting Production Deployment"
+            nohup java -jar target/*.jar --server.port=8080 > app.log 2>&1 &
+            echo $! > pid.file
+            sleep 30
+            cat app.log
+          displayName: 'Deploy to Production Port 8080'
+          env:
+            JAVA_HOME: $(JAVA_HOME_21_X64)
