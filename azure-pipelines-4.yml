@@ -29,6 +29,9 @@ steps:
 
 # Step 3: SonarCloud Analyze
 - task: SonarCloudAnalyze@1
+  inputs:
+    extraProperties: |
+      sonar.verbose=true
 
 # Step 4: SonarCloud Publish Quality Gate
 - task: SonarCloudPublish@1
