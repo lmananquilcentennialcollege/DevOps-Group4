@@ -34,7 +34,7 @@ stages:
         # Step 3: SonarCloud Prepare Task
         - task: SonarCloudPrepare@1
           inputs:
-            SonarCloud: 'DevOps'  # Replace this with the actual service connection name
+            SonarCloud: 'DevOps'  # Ensure the correct service connection name
             organization: 'donaldazhuga'
             scannerMode: 'CLI'
             configMode: 'manual'
@@ -45,7 +45,7 @@ stages:
         # Step 4: SonarCloud Analyze Task
         - task: SonarCloudAnalyze@1
           inputs:
-             extraProperties: |
+             extraProperties: | 
                sonar.verbose=true
                sonar.log.level=DEBUG
                sonar.java.binaries=C:/Users/Administrator/eclipse-workspace/devops/DevOpsGroup4/target/classes
