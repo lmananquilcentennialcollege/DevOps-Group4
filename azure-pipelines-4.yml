@@ -4,26 +4,29 @@ trigger:
 pool:
   name: AgentDonalda
 
+variables:
+  SONAR_TOKEN: $(SONAR_TOKEN)  # Make sure this is securely set in Azure DevOps Pipeline UI
+
 steps:
 # Step 1: SonarCloud Prepare
 - task: SonarCloudPrepare@1
   inputs:
-    SonarCloud: 'DevOps'   # Your service connection name in Azure DevOps
-    organization: 'donaldazhuga'         # Your organization name in SonarCloud
+    SonarCloud: 'DevOps'                   # Name of your Azure DevOps SonarCloud service connection
+    organization: 'donaldazhuga'           # Your organization ID in SonarCloud
     scannerMode: 'CLI'
     configMode: 'manual'
-    cliProjectKey: 'donaldazhuga'       # Your SonarCloud project key
-    cliProjectName: 'DevOps-Group4'     # Your SonarCloud project name
+    cliProjectKey: 'devops-group4'         # Your actual project key in SonarCloud
+    cliProjectName: 'DevOps-Group4'        # Your SonarCloud project name
     extraProperties: |
-      sonar.login=$67f94bbdea5ebc99cb7c244b87d6bf473bf76806 # Securely use the Personal Access Token
+      sonar.login=$(SONAR_TOKEN)
 
 # Step 2: Maven Build + Test
 - task: Maven@3
   inputs:
-    mavenPomFile: 'pom.xml'   # Ensure correct path to your pom.xml file
+    mavenPomFile: 'pom.xml'
     mavenOptions: '-Xmx3072m'
     javaHomeOption: 'JDKVersion'
-    jdkVersionOption: '21'    # Using Java 21
+    jdkVersionOption: '21'
     jdkArchitectureOption: 'x64'
     publishJUnitResults: true
     testResultsFiles: '**/surefire-reports/TEST-*.xml'
@@ -36,16 +39,16 @@ steps:
       sonar.verbose=true
       sonar.java.source=21
       sonar.java.target=21
-      sonar.login=$(SONAR_TOKEN)  # Ensure authentication for analysis
+      sonar.login=$(SONAR_TOKEN)
 
 # Step 4: SonarCloud Publish Quality Gate
 - task: SonarCloudPublish@1
   inputs:
-    pollingTimeoutSec: '300'  # Adjust timeout based on project size
+    pollingTimeoutSec: '300'
 
 # Step 5: Publish Build Artifacts
 - task: PublishBuildArtifacts@1
   inputs:
-    PathtoPublish: '$(System.DefaultWorkingDirectory)/target'  # Directory containing artifacts
+    PathtoPublish: '$(System.DefaultWorkingDirectory)/target'
     ArtifactName: 'drop'
     publishLocation: 'Container'
