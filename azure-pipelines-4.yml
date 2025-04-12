@@ -12,7 +12,7 @@ steps:
     organization: 'donaldazhuga'         # Your organization name in SonarCloud
     scannerMode: 'CLI'
     configMode: 'manual'
-    cliProjectKey: 'DevOps-Group4'       # Your project key in SonarCloud
+    cliProjectKey: 'donaldazhuga'       # Your project key in SonarCloud
     cliProjectName: 'DevOps-Group4'      # Your project name in SonarCloud
 
 # Step 2: Maven Build + Test
