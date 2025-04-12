@@ -9,14 +9,127 @@ trigger:
 pool:
   name: AgenPoolsDevOpsLab4
 
-steps:
-- task: Maven@3
-  inputs:
-    mavenPomFile: 'pom.xml'
-    mavenOptions: '-Xmx3072m'
-    javaHomeOption: 'JDKVersion'
-    jdkVersionOption: '21.0.4'
-    jdkArchitectureOption: 'x64'
-    publishJUnitResults: true
-    testResultsFiles: '**/surefire-reports/TEST-*.xml'
-    goals: 'package'
+variables:
+  buildConfiguration: 'Release'
+  JAVA_HOME: 'C:\Program Files\Java\jdk-21'  # Ensure this points to the correct Java installation directory
+
+stages:
+# ------------------------------
+# CI - BUILD & TEST
+# ------------------------------
+- stage: Build
+  displayName: 'Build and Test'
+  jobs:
+    - job: Build
+      steps:
+        # Step 1: Checkout code from the repository
+        - checkout: self
+
+        # Step 2: Maven Build and Test
+        - task: Maven@3
+          inputs:
+            mavenPomFile: 'pom.xml'
+            goals: 'clean install'
+            options: '-DskipTests=false'
+            javaHomeOption: 'UserPath'
+            jdkVersionOption: '21'
+            mavenVersionOption: 'Default'
+            publishJUnitResults: true
+            testResultsFiles: '/surefire-reports/TEST-*.xml'
+            jdkDirectory: $(JAVA_HOME)  # Specify the JAVA_HOME manually for the Maven task
+
+        # Debugging: Check JAVA_HOME variable
+        - script: echo $(JAVA_HOME)
+          displayName: 'Check JAVA_HOME'
+
+        # Step 3: SonarCloud Prepare Task
+        - task: SonarCloudPrepare@1
+          inputs:
+            SonarCloud: 'DevOps'  # Ensure the correct service connection name
+            organization: 'lmananquilcentennialcollege'
+            scannerMode: 'CLI'
+            configMode: 'manual'
+            cliProjectKey: 'DevOps-Group4'
+            cliProjectName: 'DevOps-Group4'
+            cliSources: '.'
+
+        # Debugging: List compiled classes in the target directory
+        - script: dir "$(System.DefaultWorkingDirectory)/target/classes" /s
+          displayName: 'List compiled classes'
+        
+        # Step 4: SonarCloud Analyze Task
+        - task: SonarCloudAnalyze@1
+          inputs:
+             extraProperties: | 
+               sonar.verbose=true
+               sonar.log.level=DEBUG
+               sonar.java.binaries=$(System.DefaultWorkingDirectory)\\target\\classes
+
+        # Step 5: SonarCloud Publish Quality Gate
+        - task: SonarCloudPublish@1
+          inputs:
+            pollingTimeoutSec: '300'
+
+        # Step 6: Publish Build Artifacts
+        - task: PublishBuildArtifacts@1
+          inputs:
+            PathtoPublish: 'target'
+            ArtifactName: 'drop'
+            publishLocation: 'Container'
+
+# ------------------------------
+# CD - DEPLOYMENT
+# ------------------------------
+- stage: Deliver
+  displayName: 'Deliver Artifacts'
+  dependsOn: Build
+  jobs:
+    - job: Deliver
+      steps:
+        - download: current
+          artifact: drop
+
+        - script: echo "Delivering artifact to the next stage"
+          displayName: 'Mock Deliver Step'
+
+- stage: DeployToDev
+  displayName: 'Deploy to Dev Environment'
+  dependsOn: Deliver
+  jobs:
+    - job: DeployDev
+      steps:
+        - script: |
+            echo "Starting deployment to Dev Environment on port 8081"
+            java -jar target/your-app.jar --server.port=8081
+          displayName: 'Deploy to Dev Port 8081'
+
+        # Debugging: List the contents of the target folder to verify JAR file existence
+        - script: dir $(System.DefaultWorkingDirectory)/target /s
+          displayName: 'List files in target directory'
+
+- stage: DeployToQAT
+  displayName: 'Deploy to QAT Environment'
+  dependsOn: DeployToDev
+  jobs:
+    - job: DeployQAT
+      steps:
+        - script: echo "Mock deployment to QAT Environment"
+          displayName: 'Deploy to QAT'
+
+- stage: DeployToStaging
+  displayName: 'Deploy to Staging Environment'
+  dependsOn: DeployToQAT
+  jobs:
+    - job: DeployStaging
+      steps:
+        - script: echo "Mock deployment to Staging Environment"
+          displayName: 'Deploy to Staging'
+
+- stage: DeployToProduction
+  displayName: 'Deploy to Production Environment'
+  dependsOn: DeployToStaging
+  jobs:
+    - job: DeployProd
+      steps:
+        - script: echo "Mock deployment to Production Environment"
+          displayName: 'Deploy to Production'
