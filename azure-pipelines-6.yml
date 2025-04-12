@@ -1,14 +1,12 @@
 trigger:
 - master
 
-pool:
-  name: AgentDonalda
-
 variables:
   buildConfiguration: 'Release'
   sonar.projectKey: 'DevOps-Group4'
   sonar.projectName: 'DevOps-Group4'
   sonar.organization: 'donaldazhuga'
+  javaVersion: '21'
   mavenVersion: '3.6.3'
 
 stages:
@@ -17,24 +15,33 @@ stages:
 # ------------------------------
 - stage: Build
   displayName: 'Build and Test'
-  condition: eq(variables['Build.SourceBranch'], 'refs/heads/master')
   jobs:
     - job: Build
+      pool:
+        name: AgentDonalda
       steps:
-        # Step 1: Checkout code from the repository
+        # Step 1: Checkout code
         - checkout: self
           clean: true
           fetchDepth: 1
 
-        # Step 2: Set up Java 21
-        - task: JavaToolInstaller@0
-          displayName: 'Install Java 21'
-          inputs:
-            versionSpec: '21'
-            jdkArchitectureOption: 'x64'
-            jdkSourceOption: 'PreInstalled'
+        # Step 2: Setup Java (self-hosted agent should have Java 21 pre-installed)
+        - script: |
+            echo "Using Java from PATH:"
+            java -version
+            echo "JAVA_HOME: $JAVA_HOME"
+          displayName: 'Verify Java Installation'
 
-        # Step 3: Maven Build with SonarCloud Analysis
+        # Step 3: Cache Maven dependencies
+        - task: Cache@2
+          displayName: 'Cache Maven dependencies'
+          inputs:
+            key: 'maven | "$(Agent.OS)" | pom.xml'
+            restoreKeys: |
+              maven | "$(Agent.OS)"
+            path: '$(USERPROFILE)\.m2\repository'
+
+        # Step 4: Maven Build with SonarCloud Analysis
         - task: Maven@3
           displayName: 'Maven Build with Sonar Analysis'
           inputs:
@@ -53,15 +60,14 @@ stages:
               -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
               -Dsonar.junit.reportPaths=target/surefire-reports
               -Dsonar.qualitygate.wait=true
-            mavenVersionOption: 'Path'
-            mavenDirectory: '$(MAVEN_HOME)'
+            mavenVersionOption: 'Default'
             publishJUnitResults: true
             testResultsFiles: '**/surefire-reports/TEST-*.xml'
             mavenAuthenticateFeed: true
           env:
-            SONAR_TOKEN: $(sonarCloudToken) # Secret variable in Azure DevOps
+            SONAR_TOKEN: $(sonarCloudToken)
 
-        # Step 4: Publish Build Artifacts
+        # Step 5: Publish Build Artifacts
         - task: PublishBuildArtifacts@1
           displayName: 'Publish Artifacts'
           inputs:
@@ -78,22 +84,24 @@ stages:
   condition: succeeded()
   jobs:
     - job: Deliver
+      pool:
+        name: AgentDonalda
       steps:
         - download: current
           artifact: drop
           displayName: 'Download Artifacts'
 
-        - script: |
-            echo "Delivering artifact to next stage"
-            ls -R target
+        - script: echo "Artifacts ready for deployment"
           displayName: 'Verify Artifacts'
 
 - stage: DeployToDev
-  displayName: 'Deploy to Dev Environment'
+  displayName: 'Deploy to Dev'
   dependsOn: Deliver
   condition: succeeded()
   jobs:
     - job: DeployDev
+      pool:
+        name: AgentDonalda
       steps:
         - download: current
           artifact: drop
@@ -101,41 +109,41 @@ stages:
         
         - script: |
             echo "Starting Dev Deployment"
-            nohup java -jar target/*.jar --server.port=8081 > app.log 2>&1 &
-            echo $! > pid.file
-            sleep 30
-            cat app.log
-          displayName: 'Deploy to Dev Port 8081'
+            java -jar target/*.jar --server.port=8081 &
+            sleep 10
+          displayName: 'Run Application'
           env:
             JAVA_HOME: $(JAVA_HOME_21_X64)
 
 - stage: DeployToQAT
-  displayName: 'Deploy to QA Environment'
+  displayName: 'Deploy to QA'
   dependsOn: DeployToDev
   condition: succeeded()
   jobs:
     - job: DeployQAT
+      pool:
+        name: AgentDonalda
       steps:
         - download: current
           artifact: drop
           displayName: 'Download Artifacts'
         
         - script: |
-            echo "Starting QA Deployment"
-            nohup java -jar target/*.jar --server.port=8082 > app.log 2>&1 &
-            echo $! > pid.file
-            sleep 30
-            cat app.log
-          displayName: 'Deploy to QA Port 8082'
+            echo "Starting QA Deployment" 
+            java -jar target/*.jar --server.port=8082 &
+            sleep 10
+          displayName: 'Run Application'
           env:
             JAVA_HOME: $(JAVA_HOME_21_X64)
 
 - stage: DeployToStaging
-  displayName: 'Deploy to Staging Environment'
+  displayName: 'Deploy to Staging'
   dependsOn: DeployToQAT
   condition: succeeded()
   jobs:
     - job: DeployStaging
+      pool:
+        name: AgentDonalda
       steps:
         - download: current
           artifact: drop
@@ -143,20 +151,20 @@ stages:
         
         - script: |
             echo "Starting Staging Deployment"
-            nohup java -jar target/*.jar --server.port=8083 > app.log 2>&1 &
-            echo $! > pid.file
-            sleep 30
-            cat app.log
-          displayName: 'Deploy to Staging Port 8083'
+            java -jar target/*.jar --server.port=8083 &
+            sleep 10
+          displayName: 'Run Application'
           env:
             JAVA_HOME: $(JAVA_HOME_21_X64)
 
 - stage: DeployToProduction
-  displayName: 'Deploy to Production Environment'
+  displayName: 'Deploy to Production'
   dependsOn: DeployToStaging
   condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
   jobs:
     - job: DeployProd
+      pool:
+        name: AgentDonalda
       steps:
         - download: current
           artifact: drop
@@ -164,10 +172,8 @@ stages:
         
         - script: |
             echo "Starting Production Deployment"
-            nohup java -jar target/*.jar --server.port=8080 > app.log 2>&1 &
-            echo $! > pid.file
-            sleep 30
-            cat app.log
-          displayName: 'Deploy to Production Port 8080'
+            java -jar target/*.jar --server.port=8080 &
+            sleep 10
+          displayName: 'Run Application'
           env:
             JAVA_HOME: $(JAVA_HOME_21_X64)
