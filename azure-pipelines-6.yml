@@ -34,7 +34,7 @@ stages:
         # Step 3: SonarCloud Prepare Task
         - task: SonarCloudPrepare@1
           inputs:
-            SonarCloud: 'DevOps' # Update this with your service connection name
+            SonarCloud: 'DevOps'  # Replace with the exact service connection name in Azure DevOps
             organization: 'donaldazhuga'
             scannerMode: 'CLI'
             configMode: 'manual'
@@ -44,6 +44,11 @@ stages:
 
         # Step 4: SonarCloud Analyze Task
         - task: SonarCloudAnalyze@1
+          inputs:
+            extraProperties: |
+              sonar.verbose=true
+              sonar.java.source=21
+              sonar.java.target=21
 
         # Step 5: SonarCloud Publish Quality Gate
         - task: SonarCloudPublish@1
