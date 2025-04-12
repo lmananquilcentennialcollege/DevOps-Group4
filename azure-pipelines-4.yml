@@ -13,7 +13,9 @@ steps:
     scannerMode: 'CLI'
     configMode: 'manual'
     cliProjectKey: 'donaldazhuga'       # Your SonarCloud project key
-    cliProjectName: 'DevOps-Group4'      # Your SonarCloud project name
+    cliProjectName: 'DevOps-Group4'     # Your SonarCloud project name
+    extraProperties: |
+      sonar.login=$(SONAR_TOKEN)  # Securely use the Personal Access Token
 
 # Step 2: Maven Build + Test
 - task: Maven@3
@@ -34,11 +36,12 @@ steps:
       sonar.verbose=true
       sonar.java.source=21
       sonar.java.target=21
+      sonar.login=$(SONAR_TOKEN)  # Ensure authentication for analysis
 
 # Step 4: SonarCloud Publish Quality Gate
 - task: SonarCloudPublish@1
   inputs:
-    pollingTimeoutSec: '300'
+    pollingTimeoutSec: '300'  # Adjust timeout based on project size
 
 # Step 5: Publish Build Artifacts
 - task: PublishBuildArtifacts@1
