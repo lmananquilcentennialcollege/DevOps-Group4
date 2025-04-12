@@ -1,5 +1,7 @@
 trigger:
-- master
+  branches:
+    include:
+      - master
 
 pool:
   name: AgentDonalda
@@ -34,7 +36,7 @@ stages:
         # Step 3: SonarCloud Prepare Task
         - task: SonarCloudPrepare@1
           inputs:
-            SonarCloud: 'DevOps'  # Ensure the correct service connection name
+            SonarCloud: 'DevOps'  # Replace with your actual service connection name
             organization: 'donaldazhuga'
             scannerMode: 'CLI'
             configMode: 'manual'
@@ -45,10 +47,10 @@ stages:
         # Step 4: SonarCloud Analyze Task
         - task: SonarCloudAnalyze@1
           inputs:
-             extraProperties: | 
-               sonar.verbose=true
-               sonar.log.level=DEBUG
-               sonar.java.binaries=C:/Users/Administrator/eclipse-workspace/devops/DevOpsGroup4/target/classes
+            extraProperties: |
+              sonar.verbose=true
+              sonar.log.level=DEBUG
+              sonar.java.binaries=target/classes
 
         # Step 5: SonarCloud Publish Quality Gate
         - task: SonarCloudPublish@1
@@ -83,9 +85,17 @@ stages:
   jobs:
     - job: DeployDev
       steps:
+        - download: current
+          artifact: drop
+
+        - script: |
+            echo "Listing contents of downloaded artifacts"
+            ls $(Pipeline.Workspace)/drop
+          displayName: 'Check artifact contents'
+
         - script: |
             echo "Starting deployment to Dev Environment on port 8081"
-            java -jar target/your-app.jar --server.port=8081
+            java -jar $(Pipeline.Workspace)/drop/your-app.jar --server.port=8081
           displayName: 'Deploy to Dev Port 8081'
 
 - stage: DeployToQAT
