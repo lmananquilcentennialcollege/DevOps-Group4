@@ -15,7 +15,7 @@ steps:
     cliProjectKey: 'donaldazhuga'       # Your SonarCloud project key
     cliProjectName: 'DevOps-Group4'     # Your SonarCloud project name
     extraProperties: |
-      sonar.login=$(SONAR_TOKEN)  # Securely use the Personal Access Token
+      sonar.login=$(27b3b7113daf4ee14b5a2ba25d21fc9af98d5a5d)  # Securely use the Personal Access Token
 
 # Step 2: Maven Build + Test
 - task: Maven@3
