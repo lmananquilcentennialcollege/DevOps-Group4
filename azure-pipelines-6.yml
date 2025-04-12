@@ -6,6 +6,9 @@ pool:
 
 variables:
   buildConfiguration: 'Release'
+  sonar.projectKey: 'DevOps-Group4'
+  sonar.projectName: 'DevOps-Group4'
+  sonar.organization: 'donaldazhuga'
 
 stages:
 # ------------------------------
@@ -13,50 +16,57 @@ stages:
 # ------------------------------
 - stage: Build
   displayName: 'Build and Test'
+  condition: eq(variables['Build.SourceBranch'], 'refs/heads/master')
   jobs:
     - job: Build
       steps:
         # Step 1: Checkout code from the repository
         - checkout: self
+          clean: true
 
         # Step 2: Maven Build and Test with Java 21
         - task: Maven@3
+          displayName: 'Maven Build and Test'
           inputs:
             mavenPomFile: 'pom.xml'
-            goals: 'clean install'
-            options: '-DskipTests=false'
+            goals: 'clean verify'
+            options: '-DskipTests=false -Dsonar.skip=true'
             javaHomeOption: 'JDKVersion'
             jdkVersionOption: '21'
             mavenVersionOption: 'Default'
             publishJUnitResults: true
             testResultsFiles: '**/surefire-reports/TEST-*.xml'
+            mavenAuthenticateFeed: true
 
-        # Step 3: SonarCloud Prepare Task
+        # Step 3: SonarCloud Analysis
         - task: SonarCloudPrepare@1
+          displayName: 'Prepare SonarCloud Analysis'
           inputs:
-            SonarCloud: 'DevOps'  # Replace with the exact service connection name in Azure DevOps
-            organization: 'donaldazhuga'
-            scannerMode: 'CLI'
-            configMode: 'manual'
-            cliProjectKey: 'DevOps-Group4'
-            cliProjectName: 'DevOps-Group4'
-            cliSources: '.'
-
-        # Step 4: SonarCloud Analyze Task
-        - task: SonarCloudAnalyze@1
-          inputs:
+            SonarCloud: 'DevOps'
+            organization: '$(sonar.organization)'
+            scannerMode: 'MSBuild'
+            projectKey: '$(sonar.projectKey)'
+            projectName: '$(sonar.projectName)'
             extraProperties: |
               sonar.verbose=true
               sonar.java.source=21
               sonar.java.target=21
+              sonar.sourceEncoding=UTF-8
+              sonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
+              sonar.junit.reportPaths=target/surefire-reports
 
-        # Step 5: SonarCloud Publish Quality Gate
+        - task: SonarCloudAnalyze@1
+          displayName: 'Run SonarCloud Analysis'
+          timeoutInMinutes: 10
+
         - task: SonarCloudPublish@1
+          displayName: 'Publish SonarCloud Results'
           inputs:
             pollingTimeoutSec: '300'
 
-        # Step 6: Publish Build Artifacts
+        # Step 4: Publish Build Artifacts
         - task: PublishBuildArtifacts@1
+          displayName: 'Publish Artifacts'
           inputs:
             PathtoPublish: 'target'
             ArtifactName: 'drop'
@@ -68,11 +78,13 @@ stages:
 - stage: Deliver
   displayName: 'Deliver Artifacts'
   dependsOn: Build
+  condition: succeeded()
   jobs:
     - job: Deliver
       steps:
         - download: current
           artifact: drop
+          displayName: 'Download Artifacts'
 
         - script: echo "Delivering artifact to next stage"
           displayName: 'Mock Deliver Step'
@@ -80,17 +92,21 @@ stages:
 - stage: DeployToDev
   displayName: 'Deploy to Dev Environment'
   dependsOn: Deliver
+  condition: succeeded()
   jobs:
     - job: DeployDev
       steps:
         - script: |
             echo "Starting Dev Deployment"
-            java -jar target/your-app.jar --server.port=8081
+            java -jar target/*.jar --server.port=8081
           displayName: 'Deploy to Dev Port 8081'
+          env:
+            JAVA_HOME: $(JAVA_HOME_21_X64)
 
 - stage: DeployToQAT
   displayName: 'Deploy to QAT Environment'
-  dependsOn: DeployToDev
+  dependsOn: [DeployToDev]
+  condition: succeeded()
   jobs:
     - job: DeployQAT
       steps:
@@ -99,7 +115,8 @@ stages:
 
 - stage: DeployToStaging
   displayName: 'Deploy to Staging Environment'
-  dependsOn: DeployToQAT
+  dependsOn: [DeployToQAT]
+  condition: succeeded()
   jobs:
     - job: DeployStaging
       steps:
@@ -108,7 +125,8 @@ stages:
 
 - stage: DeployToProduction
   displayName: 'Deploy to Production Environment'
-  dependsOn: DeployToStaging
+  dependsOn: [DeployToStaging]
+  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
   jobs:
     - job: DeployProd
       steps:
