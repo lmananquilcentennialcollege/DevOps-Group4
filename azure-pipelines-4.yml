@@ -5,47 +5,22 @@ pool:
   name: AgentDonalda
 
 steps:
-# Step 1: SonarCloud Prepare
-- task: SonarCloudPrepare@1
-  inputs:
-    SonarCloud: 'DevOps'   # Your service connection name in Azure DevOps
-    organization: 'donaldazhuga'         # Your organization name in SonarCloud
-    scannerMode: 'CLI'
-    configMode: 'manual'
-    cliProjectKey: 'donaldazhuga'       # Your SonarCloud project key
-    cliProjectName: 'DevOps-Group4'     # Your SonarCloud project name
-    extraProperties: |
-      sonar.login=$27b3b7113daf4ee14b5a2ba25d21fc9af98d5a5d  # Securely use the Personal Access Token
-
-# Step 2: Maven Build + Test
+# Maven Build + Sonar Analysis
 - task: Maven@3
   inputs:
-    mavenPomFile: 'pom.xml'   # Ensure correct path to your pom.xml file
+    mavenPomFile: 'pom.xml'
     mavenOptions: '-Xmx3072m'
     javaHomeOption: 'JDKVersion'
-    jdkVersionOption: '21'    # Using Java 21
+    jdkVersionOption: '21'
     jdkArchitectureOption: 'x64'
     publishJUnitResults: true
     testResultsFiles: '**/surefire-reports/TEST-*.xml'
-    goals: 'clean verify'
+    goals: 'clean verify sonar:sonar'
+    options: '-Dsonar.login=$(SONAR_TOKEN) -Dsonar.projectKey=<exact-project-key> -Dsonar.organization=donaldazhuga'
 
-# Step 3: SonarCloud Analyze
-- task: SonarCloudAnalyze@1
-  inputs:
-    extraProperties: |
-      sonar.verbose=true
-      sonar.java.source=21
-      sonar.java.target=21
-      sonar.login=$(SONAR_TOKEN)  # Ensure authentication for analysis
-
-# Step 4: SonarCloud Publish Quality Gate
-- task: SonarCloudPublish@1
-  inputs:
-    pollingTimeoutSec: '300'  # Adjust timeout based on project size
-
-# Step 5: Publish Build Artifacts
+# Publish Build Artifacts
 - task: PublishBuildArtifacts@1
   inputs:
-    PathtoPublish: '$(System.DefaultWorkingDirectory)/target'  # Directory containing artifacts
+    PathtoPublish: '$(System.DefaultWorkingDirectory)/target'
     ArtifactName: 'drop'
     publishLocation: 'Container'
